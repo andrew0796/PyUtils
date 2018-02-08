@@ -15,14 +15,21 @@ Includes common functions on Measurements, and arbitrary functions
 
 import math
 import warnings
+import configparser as cp
 from sys import float_info # to get machine epsilon
+
+# read the config file
+config = cp.ConfigParser()
+config.read('config.ini')
+if 'measurementPrintModes' not in config:
+    raise Exception('measurementPrintMode not in configuration file')
 
 class Measurement:
     ''' Measurement class '''
     __doc__ = "Measurement Class"
     __module__ = "MeasurementErrors"
     
-    def __init__(self, value,error, name=None,units=None):
+    def __init__(self, value,error, name=None,units=None, printMode='default'):
         self.value = value
         self.error = error
 
@@ -35,6 +42,13 @@ class Measurement:
         else:
             self.units = 'arb'
 
+        if printMode not in config['measurementPrintModes']:
+            warnings.warn('given printMode not in config file, setting to default')
+            self.printMode = 'default'
+        else:
+            self.printMode = printMode
+        self._printStr = config['measurementPrintModes'][self.printMode]
+        
     def __add__(self, other):
         ''' add two values based on Gaussian error propagation '''
         if isinstance(other, Measurement):
@@ -125,8 +139,29 @@ class Measurement:
         return Measurement(newValue,newError,newName,newUnits)
     
     def __repr__(self):
-        return self.name+': {} +/- {} {}'.format(self.value,self.error,self.units)
+        if self.error > self.value:
+            scale = 10**math.floor(math.log10(self.value))
+            tempValue = self.value/scale
+            tempError = self.error/scale
+            value = round(tempValue)*scale
+            error = round(tempError)*scale
+        else:
+            nDigits = abs(math.floor(math.log10(self.error)))
+            nDigitsError = nDigits+int(config['measurement']['errorDigits'])-1
+            if nDigits == 0:
+                value = round(self.value)
+            else:
+                value = round(self.value, nDigits)
+            if nDigitsError == 0:
+                error = round(self.error)
+            else:
+                error = round(self.error, nDigitsError)
 
+        if self.printMode == 'latexSI':
+            error = error*10**(-math.floor(math.log10(error)))
+            error = str(error).replace('.','')
+        return self._printStr.format(value,error,self.name,self.units)
+        
 
 #############################################################################
 # Functions
