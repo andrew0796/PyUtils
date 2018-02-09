@@ -13,6 +13,8 @@ Defines a Measurement class that more or less works like a normal number, operat
 Includes common functions on Measurements, and arbitrary functions
 '''
 
+__name__ = "measurementerrors"
+
 import math
 import warnings
 import configparser as cp
@@ -137,6 +139,18 @@ class Measurement:
         newName = '('+self.name+')^({})'.format(p)
         newUnits = '('+self.units+')^({})'.format(p)
         return Measurement(newValue,newError,newName,newUnits)
+
+    def SetPrintMode(self, mode):
+        ''' set the print mode '''
+        if mode not in config['measurementPrintModes']:
+            print('Given printMode not in config file, printMode not set')
+            print('Possible modes are:')
+            for i in config['measurementPrintModes']:
+                print('\t',i)
+            print('You can define a new mode in config.ini')
+        else:
+            self.printMode = mode
+            self._printStr = config['measurementPrintModes'][self.printMode]
     
     def __repr__(self):
         if self.error > self.value:
