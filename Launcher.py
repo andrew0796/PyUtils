@@ -28,17 +28,29 @@ class Launcher :
 
         self.command = command
 
+        self.options = None
+        self.jobs = None
+        self.niceness = None
+        self.nohup = None
+        self.nruns = None
+
+    def Parse(self):
+        self.options = self.parser.parse_args()
+        
+        self.jobs = self.options.j
+        self.niceness = self.options.n
+        self.nohup = self.options.nohup
+        self.nruns = self.options.nruns
+        
+        return None
+        
     def Run(self):
-        options = self.parser.parse_args()
+        if self.options is None:
+            self.Parse()
         
-        jobs = options.j
-        niceness = options.n
-        nohup = options.nohup
-        nruns = options.nruns
-        
-        if jobs is not None and (jobs < 1 or jobs > os.cpu_count()):
+        if self.jobs is not None and (self.jobs < 1 or self.jobs > os.cpu_count()):
             raise ValueError('Number of jobs given not allowed!')
-        if nruns < 0:
+        if self.nruns < 0:
             raise ValueError('Number of runs to do is less than 0!')
 
         # create temporary file to feed into parallel, it will be deleted at the end
@@ -46,18 +58,18 @@ class Launcher :
         jobname = jobfile.name
 
         # write commands to temporary file
-        for i in range(nruns):
+        for i in range(self.nruns):
             jobfile.write(self.command(i)+'\n')
         jobfile.close()
 
         # launch jobs
         launcher = ''
         limiter = ''
-        if nohup:
+        if self.nohup:
             launcher += 'nohup '
-        if jobs is not None:
-            limiter = '-j{}'.format(jobs)
-        launcher += 'nice -n {} parallel {} < {}'.format(niceness,limiter,jobname)
+        if self.jobs is not None:
+            limiter = '-j{}'.format(self.jobs)
+        launcher += 'nice -n {} parallel {} < {}'.format(self.niceness,limiter,jobname)
         os.system(launcher)
 
         # remove temporary file
