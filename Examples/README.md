@@ -14,7 +14,8 @@ In a terminal window run `python3 test_launcher2.py --nruns <n> -j <jobs>` to ca
 
 ## `test_fitting.py`
 Simple test/example for `Fitting.py`
-Not yet completed
+Fit a Gaussian to sample data. Plot and print out the results
+In a terminal window run `python3 test_fitting.py`
 
 ## `test_measurement.py`
 Simple test/example for `MeasurementErrors.py`
