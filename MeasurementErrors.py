@@ -19,10 +19,12 @@ import math
 import warnings
 import configparser as cp
 from sys import float_info # to get machine epsilon
+import os
 
 # read the config file
+configFile = os.path.dirname(os.path.realpath(__file__))+'/config.ini'
 config = cp.ConfigParser()
-config.read('config.ini')
+config.read(configFile)
 if 'measurementPrintModes' not in config:
     raise Exception('measurementPrintMode not in configuration file')
 
@@ -151,31 +153,39 @@ class Measurement:
         else:
             self.printMode = mode
             self._printStr = config['measurementPrintModes'][self.printMode]
-    
-    def __repr__(self):
+
+    def __str__(self):
         if self.error > self.value:
-            scale = 10**math.floor(math.log10(self.value))
+            scale = 10**math.floor(math.log10(abs(self.value)))
             tempValue = self.value/scale
             tempError = self.error/scale
             value = round(tempValue)*scale
             error = round(tempError)*scale
+            nDigitsError = len(str(error))
         else:
-            nDigits = abs(math.floor(math.log10(self.error)))
+            nDigits = -math.floor(math.log10(self.error))
             nDigitsError = nDigits+int(config['measurement']['errorDigits'])-1
-            if nDigits == 0:
-                value = round(self.value)
+            if nDigits <= 0:
+                value = int(round(self.value))
             else:
                 value = round(self.value, nDigits)
-            if nDigitsError == 0:
-                error = round(self.error)
+            if nDigitsError <= 0:
+                error = int(round(self.error))
             else:
                 error = round(self.error, nDigitsError)
-
+            
         if self.printMode == 'latexSI':
             error = error*10**(-math.floor(math.log10(error)))
-            error = str(error).replace('.','')
+            if nDigitsError <= 0:
+                error = str(error).replace('.','')[:math.floor(math.log10(self.error))+1]
+            else:
+                nDigitsCfg = int(config['measurement']['errorDigits'])
+                error = str(error).replace('.','')[:nDigitsCfg]
         return self._printStr.format(value,error,self.name,self.units)
-        
+    
+    def __repr__(self):
+        return self.__str__()
+    
 
 #############################################################################
 # Functions
@@ -283,7 +293,7 @@ def log(m, base=math.e):
         fName = 'ln'
         return ArbFunc(m, f,df, fName=fName)
     f = lambda x: math.log(x, base)
-    df = lambda x: 1/(x*math.log(base))
+    df = lambda x: abs(1/(x*math.log(base)))
     fName = 'log_{}'.format(base)
     return ArbFunc(m, f,df, fName=fName)
     
