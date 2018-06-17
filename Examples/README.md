@@ -19,7 +19,7 @@ In a terminal window run `python3 test_fitting.py`
 
 ## `test_measurement.py`
 Simple test/example for `MeasurementErrors.py`
-Not yet completed
+Generate data for a simple experiment to measure gravity. Calculate acceleration due to gravity from several measurements and print out the results. Also explicitly calculates the error in each calculation to validate the results.
 
 ## `test_general.py`
 Simple test/example for `General.py`
