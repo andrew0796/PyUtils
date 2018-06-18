@@ -25,6 +25,18 @@ class Launcher :
         self.parser.add_argument("--nruns",
                                  help="number of runs to do",
                                  type=int, default=1)
+        self.parser.add_argument("--bar",
+                                 help="display parallel progress bar",
+                                 action='store_true')
+        self.parser.add_argument("--delay",
+                                 help="amount of delay between starting jobs",
+                                 type=float)
+        self.parser.add_argument("--dry_run",
+                                 help="print out each command to be run, but do not run anything",
+                                 action='store_true')
+        self.parser.add_argument("--parallel_args",
+                                 help="additional arguments to pass to parallel",
+                                 type=str)
 
         self.command = command
 
@@ -33,6 +45,10 @@ class Launcher :
         self.niceness = None
         self.nohup = None
         self.nruns = None
+        self.bar = None
+        self.delay = None
+        self.dryRun = None
+        self.parallelArgs = None
 
     def Parse(self):
         self.options = self.parser.parse_args()
@@ -41,6 +57,10 @@ class Launcher :
         self.niceness = self.options.n
         self.nohup = self.options.nohup
         self.nruns = self.options.nruns
+        self.bar = self.options.bar
+        self.delay = self.options.delay
+        self.dryRun = self.options.dry_run
+        self.parallelArgs = self.options.parallel_args
         
         return None
         
@@ -65,11 +85,21 @@ class Launcher :
         # launch jobs
         launcher = ''
         limiter = ''
+        additionalArgs = ''
         if self.nohup:
             launcher += 'nohup '
         if self.jobs is not None:
             limiter = '-j{}'.format(self.jobs)
-        launcher += 'nice -n {} parallel {} < {}'.format(self.niceness,limiter,jobname)
+        if self.bar:
+            additionalArgs += '--bar '
+        if self.delay is not None:
+            additionalArgs += '--delay {} '.format(self.delay)
+        if self.dryRun:
+            additionalArgs += '--dry-run '
+        if self.parallelArgs is not None:
+            additionalArgs += self.parallelArgs
+        launcher += 'parallel --nice {} {} {} < {}'.format(self.niceness,additionalArgs,limiter,jobname)
+        print(launcher)
         os.system(launcher)
 
         # remove temporary file
