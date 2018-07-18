@@ -7,6 +7,9 @@ from Launcher import *
 import os
 
 def test_launcher2():
+    # create the output file
+    os.system('touch CalculatePi.txt')
+    
     # set command
     command = lambda x: 'python3 CalculatePi.py >> CalculatePi.txt'
     launcher = Launcher(command)
